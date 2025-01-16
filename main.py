@@ -21,6 +21,8 @@
 import time 
 import os
 import re
+import pyperclip
+import pyautogui
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -59,6 +61,42 @@ class Bot:
             return True
         return False
 
+    def invite(self, name):
+        clipboard = "/invite " + name
+        pyperclip.copy(clipboard)
+        pyautogui.press("enter")
+        time.sleep(1)
+        pyautogui.hotkey('ctrl', 'v')
+        time.sleep(0.5)
+        pyautogui.press("enter")
+
+    def take_item(self):
+        pyautogui.press("tab")
+
+    def send_trade(self, name):
+        clipboard = "/tradewith " + name
+        pyperclip.copy(clipboard)
+        pyautogui.press("enter")
+        time.sleep(1)
+        pyautogui.hotkey('ctrl', 'v')
+        time.sleep(0.5)
+        pyautogui.press("enter")
+
+    def kick_and_ty(self, name):
+        clipboard = "/kick " + name
+        pyperclip.copy(clipboard)
+        pyautogui.press("enter")
+        time.sleep(1)
+        pyautogui.hotkey('ctrl', 'v')
+        time.sleep(0.5)
+        pyautogui.press("enter")
+        clipboard = "@"+name+" ty"
+        pyperclip.copy(clipboard)
+        pyautogui.press("enter")
+        time.sleep(1)
+        pyautogui.hotkey('ctrl', 'v')
+        time.sleep(0.5)
+        pyautogui.press("enter")
 
 if __name__ == "__main__":
     bot = Bot()
@@ -78,6 +116,7 @@ if __name__ == "__main__":
                 price = info_whisper[2]
                 pos = info_whisper[3]
                 print("command /invite " + name + " sale " + pos + " " + price)
+                bot.invite(name)
             
             info_bulk_whisper = bot.wait_whisper(line, whisper_bulk_pattern)
             if info_bulk_whisper and not is_pm:
@@ -88,17 +127,22 @@ if __name__ == "__main__":
                 item = info_bulk_whisper[2]
                 price = info_bulk_whisper[3]
                 print("command /invite " + name + " sale " + num + " " + item + " " + price)
+                bot.invite(name)
 
 
             info_join = bot.wait_join(line, join_hideout_pattern)
             if info_join and not is_wait:
                 is_wait = True
                 print("Join done!")
+                #take item
+                time.sleep(1)
+                bot.send_trade(name)
 
             info_trade = bot.wait_join(line, trade_accept_pattern)
             if info_trade and not is_trade:
                 is_trade = True
                 print("Trade done")
+                bot.kick_and_ty(name)
                 is_pm = False
                 is_wait = False
                 is_trade = False
