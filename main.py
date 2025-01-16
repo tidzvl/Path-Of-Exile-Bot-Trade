@@ -23,17 +23,27 @@ import os
 import re
 import pyperclip
 import pyautogui
+from random import randint
 from dotenv import load_dotenv
+import subprocess
+
 
 load_dotenv()
 
+stash = {
+    '~b/o 4 divine' : 0,
+    '~b/o 1.5 divine' : 1,
+    '~b/o 0.5 divine' : 2
+}
+
 logs_path = os.getenv('PATH_OF_CLIENT')
+click_path = 'click.exe'
 
 whisper_pattern = re.compile(r'@From (\w+): Hi, I would like to buy your (.+) listed for (.+) in (.+)')
 whisper_bulk_pattern = re.compile(r"@From (\w+): Hi, I'd like to buy your (.+) (.+) for my (.+) Orb in Settlers")
 join_hideout_pattern = re.compile(r'(\w+) has joined the area.')
 trade_accept_pattern = re.compile(r'Trade accepted.')
-
+wait_count = 0
 is_pm = False
 is_wait = False
 is_trade = False
@@ -98,6 +108,11 @@ class Bot:
         time.sleep(0.5)
         pyautogui.press("enter")
 
+    def ctrl_click(self, x, y, z):
+        with open("logs.txt", "w") as f:
+            f.write(f"{x}, {y}, {z}")
+        subprocess.call([click_path])
+
 if __name__ == "__main__":
     bot = Bot()
     with open(logs_path, 'r', encoding='utf-8') as file:
@@ -106,6 +121,16 @@ if __name__ == "__main__":
             line = file.readline()
             if not line:
                 time.sleep(1)
+                if is_pm and not is_wait:
+                    wait_count += 1
+                    if wait_count == 30:
+                        print("Cancelled")
+                        is_pm = False
+                        is_wait = False
+                        is_trade = False
+                        wait_count = 0
+                else:
+                    wait_count = 0
                 continue
 
             info_whisper = bot.wait_whisper(line, whisper_pattern)
@@ -115,6 +140,10 @@ if __name__ == "__main__":
                 name = info_whisper[0]
                 price = info_whisper[2]
                 pos = info_whisper[3]
+                match = re.search(r'stash tab "([^"]+)"; position: left (\d+), top (\d+)', pos)
+                tab = match.group(1)
+                x = match.group(2)
+                y = match.group(3)
                 print("command /invite " + name + " sale " + pos + " " + price)
                 bot.invite(name)
             
@@ -134,6 +163,7 @@ if __name__ == "__main__":
             if info_join and not is_wait:
                 is_wait = True
                 print("Join done!")
+                bot.ctrl_click(int(x)-1, int(y)-1, stash[str(tab)])
                 #take item
                 time.sleep(1)
                 bot.send_trade(name)
@@ -146,3 +176,13 @@ if __name__ == "__main__":
                 is_pm = False
                 is_wait = False
                 is_trade = False
+
+            wait_count += 1
+            if wait_count == 30:
+                print("Cancelled")
+                is_pm = False
+                is_wait = False
+                is_trade = False
+                wait_count = 0
+
+                
